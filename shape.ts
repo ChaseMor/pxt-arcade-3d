@@ -7,6 +7,8 @@ namespace shape {
     export interface Shape {
         rotate(angle: number, axis: Axis): void
 
+        translate(distance: number, axis: Axis): void
+        
         draw(camera: number[]): void
     }
 } 

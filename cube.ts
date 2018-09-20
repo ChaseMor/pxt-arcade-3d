@@ -57,6 +57,14 @@ namespace shape {
             }
         }
 
+
+
+        translate(distance: number, axis: Axis) {
+            for (let i = 0; i < this.points.length; i++) {
+                this.points[i][axis] += distance
+            }
+            this.center[axis] += distance
+        }
         draw(camera: number[]) {
 
             let scale = 1
