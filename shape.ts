@@ -1,4 +1,4 @@
-namespace shape {
+namespace shapes3d {
     export enum Axis {
         X,
         Y,

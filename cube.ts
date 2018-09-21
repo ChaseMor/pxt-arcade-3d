@@ -1,4 +1,4 @@
-namespace shape {
+namespace shapes3d {
     export class Cube extends Shape {
 
         constructor(center: number[], width: number, height: number, length: number, scale?: number, color?: number) {
@@ -21,9 +21,5 @@ namespace shape {
             this.lines = [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]]
 
         }
-
-
-
-
     }
 }
