@@ -1,10 +1,12 @@
 namespace shape {
     export class Cube implements Shape {
         center: number[]
+        scale: number
         color: number
 
         points: number[][]
-        constructor(center: number[], width: number, height: number, length: number, color?: number) {
+        lines: number[][]
+        constructor(center: number[], width: number, height: number, length: number, scale?: number, color?: number) {
             this.center = center
             this.points = [[], [], [], [], [], [], [], []]
             //front-half
@@ -19,6 +21,10 @@ namespace shape {
             this.points[6] = [center[0] - width / 2, center[1] - height / 2, center[2] - length / 2]
             this.points[7] = [center[0] - width / 2, center[1] + height / 2, center[2] - length / 2]
 
+
+            this.lines = [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]]
+
+            this.scale = scale
             this.color = color ? color : 1
         }
 
@@ -67,32 +73,38 @@ namespace shape {
         }
         draw(camera: number[]) {
 
-            let scale = 1
             let convertedPoints: number[][] = [[], [], [], [], [], [], [], []]
             for (let i = 0; i < this.points.length; i++) {
-                convertedPoints[i] = this.translateToCenter(this.convertToScreen(this.points[i], camera), scale)
+                convertedPoints[i] = this.translateToCenter(this.convertToPlane(this.points[i], camera), this.scale)
             }
 
 
-            for (let i = 0; i < 4; i++) {
-                screen.drawLine(convertedPoints[i][0], convertedPoints[i][1],
-                    convertedPoints[(i + 1) % 4][0], convertedPoints[(i + 1) % 4][1], this.color)
-            }
+            for (let i = 0; i < this.lines.length; i++) {
+                let p1 = convertedPoints[this.lines[i][0]]
+                let p2 = convertedPoints[this.lines[i][1]]
 
-            for (let i = 0; i < 4; i++) {
-                screen.drawLine(convertedPoints[i + 4][0], convertedPoints[i + 4][1],
-                    convertedPoints[((i + 1) % 4) + 4][0], convertedPoints[((i + 1) % 4) + 4][1], this.color)
-            }
+                if (this.points[this.lines[i][0]][2] > 0 && this.points[this.lines[i][1]][2] > 0) {
+                    screen.drawLine(p1[0], p1[1], p2[0], p2[1], this.color)
+                } else if (this.points[this.lines[i][0]][2] > 0 || this.points[this.lines[i][1]][2] > 0) {
+                    let xDiff = this.points[this.lines[i][0]][0] - this.points[this.lines[i][1]][0]
+                    let yDiff = this.points[this.lines[i][0]][1] - this.points[this.lines[i][1]][1]
+                    let zDiff = this.points[this.lines[i][0]][2] - this.points[this.lines[i][1]][2]
 
-            for (let i = 0; i < 4; i++) {
-                screen.drawLine(convertedPoints[i][0], convertedPoints[i][1],
-                    convertedPoints[i + 4][0], convertedPoints[i + 4][1], this.color)
+                    let newX = this.points[this.lines[i][0]][0] - (xDiff / zDiff) * this.points[this.lines[i][0]][2]
+                    let newY = this.points[this.lines[i][0]][1] - (yDiff / zDiff) * this.points[this.lines[i][0]][2]
+                    let newPoint = this.translateToCenter(this.convertToPlane([newX, newY, 0], camera), this.scale)
+                    if (this.points[this.lines[i][0]][2] > 0) {
+                        screen.drawLine(p1[0], p1[1], newPoint[0], newPoint[1], this.color)
+                    } else if (this.points[this.lines[i][1]][2] > 0) {
+                        screen.drawLine(newPoint[0], newPoint[1], p2[0], p2[1], this.color)
+                    }
+                }
             }
 
         }
 
 
-        convertToScreen(point: number[], camera: number[]): number[] {
+        convertToPlane(point: number[], camera: number[]): number[] {
             let factor = - point[2] / (point[2] - camera[2])
             return [point[0] + (factor * (point[0] - camera[0])), point[1] + (factor * (point[1] - camera[1]))]
         }
