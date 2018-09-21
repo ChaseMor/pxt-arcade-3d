@@ -17,7 +17,7 @@ game.onPaint(function () {
 })
 
 game.onUpdate(function () {
-    cube.translate(controller.dy(), shape.Axis.Z)
+    cube.translate(-controller.dy(), shape.Axis.Z)
 })
 
 controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
