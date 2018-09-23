@@ -13,7 +13,7 @@ namespace shapes3d {
         points: number[][]
         lines: number[][]
 
-        constructor(center: number[], scale?:number, color?:number) {
+        constructor(center: number[], scale?: number, color?: number) {
             this.center = center
             this.scale = scale
             this.color = color ? color : 1
@@ -64,9 +64,15 @@ namespace shapes3d {
         }
         draw(camera: number[]) {
 
+            let relativePoints: number[][] = []
+
+            for (let i = 0; i < this.points.length; i++) {
+                relativePoints[i] = this.getRelativePoint(this.points[i], camera)
+            }
+
             let convertedPoints: number[][] = [[], [], [], [], [], [], [], []]
             for (let i = 0; i < this.points.length; i++) {
-                convertedPoints[i] = this.translateToCenter(this.convertToPlane(this.points[i], camera), this.scale)
+                convertedPoints[i] = this.translateToCenter(this.convertToPlane(relativePoints[i], camera), this.scale)
             }
 
 
@@ -74,19 +80,19 @@ namespace shapes3d {
                 let p1 = convertedPoints[this.lines[i][0]]
                 let p2 = convertedPoints[this.lines[i][1]]
 
-                if (this.points[this.lines[i][0]][2] > 0 && this.points[this.lines[i][1]][2] > 0) {
+                if (relativePoints[this.lines[i][0]][2] > 0 && relativePoints[this.lines[i][1]][2] > 0) {
                     screen.drawLine(p1[0], p1[1], p2[0], p2[1], this.color)
-                } else if (this.points[this.lines[i][0]][2] > 0 || this.points[this.lines[i][1]][2] > 0) {
-                    let xDiff = this.points[this.lines[i][0]][0] - this.points[this.lines[i][1]][0]
-                    let yDiff = this.points[this.lines[i][0]][1] - this.points[this.lines[i][1]][1]
-                    let zDiff = this.points[this.lines[i][0]][2] - this.points[this.lines[i][1]][2]
+                } else if (relativePoints[this.lines[i][0]][2] > 0 || relativePoints[this.lines[i][1]][2] > 0) {
+                    let xDiff = relativePoints[this.lines[i][0]][0] - relativePoints[this.lines[i][1]][0]
+                    let yDiff = relativePoints[this.lines[i][0]][1] - relativePoints[this.lines[i][1]][1]
+                    let zDiff = relativePoints[this.lines[i][0]][2] - relativePoints[this.lines[i][1]][2]
 
-                    let newX = this.points[this.lines[i][0]][0] - (xDiff / zDiff) * this.points[this.lines[i][0]][2]
-                    let newY = this.points[this.lines[i][0]][1] - (yDiff / zDiff) * this.points[this.lines[i][0]][2]
+                    let newX = relativePoints[this.lines[i][0]][0] - (xDiff / zDiff) * (relativePoints[this.lines[i][0]][2] - camera[2])
+                    let newY = relativePoints[this.lines[i][0]][1] - (yDiff / zDiff) * (relativePoints[this.lines[i][0]][2] - camera[2])
                     let newPoint = this.translateToCenter(this.convertToPlane([newX, newY, 0], camera), this.scale)
-                    if (this.points[this.lines[i][0]][2] > 0) {
+                    if (relativePoints[this.lines[i][0]][2] > 0) {
                         screen.drawLine(p1[0], p1[1], newPoint[0], newPoint[1], this.color)
-                    } else if (this.points[this.lines[i][1]][2] > 0) {
+                    } else if (relativePoints[this.lines[i][1]][2] > 0) {
                         screen.drawLine(newPoint[0], newPoint[1], p2[0], p2[1], this.color)
                     }
                 }
@@ -94,10 +100,25 @@ namespace shapes3d {
 
         }
 
+        getRelativePoint(point: number[], camera: number[]): number[] {
+            let directon = camera[3]
+
+            let x = ((point[0] - camera[0]) * Math.cos(directon) - (point[2] - camera[2]) * Math.sin(directon))
+            let y = (point[1] - camera[1])
+            let z = ((point[0] - camera[0]) * Math.sin(directon) + (point[2] - camera[2]) * Math.cos(directon))
+
+            return [x, y, z]
+        }
 
         convertToPlane(point: number[], camera: number[]): number[] {
-            let factor = - point[2] / (point[2] - camera[2])
-            return [point[0] + (factor * (point[0] - camera[0])), point[1] + (factor * (point[1] - camera[1]))]
+
+            let directon = camera[3]
+            let x = point[0] + camera[0]
+            let y = point[1] + camera[1]
+            let z = point[2] + camera[2]
+            let factor = - z / (z - camera[2])
+
+            return [x + (factor * (x - camera[0])), y + (factor * (y - camera[1]))]
         }
         translateToCenter(point: number[], scale: number): number[] {
             return [(scale * point[0]) + (scene.screenWidth() / 2), (scale * point[1]) + (scene.screenHeight() / 2)]
